@@ -1,0 +1,178 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.example</groupId>
+  <artifactId>CacheEvictionPolicy</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>CacheEvictionPolicy</name>
+  <url>http://maven.apache.org</url>
+
+    <properties>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <maven.test.failure.ignore>false</maven.test.failure.ignore>
+      <maven.compiler.source>9</maven.compiler.source>
+      <maven.compiler.target>9</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+      <!-- JUnit 5 Dependencies -->
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>5.8.1</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>5.8.2</version>
+        <scope>test</scope>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/org.junit.vintage/junit-vintage-engine -->
+      <dependency>
+        <groupId>org.junit.vintage</groupId>
+        <artifactId>junit-vintage-engine</artifactId>
+        <version>5.11.4</version>
+        <scope>test</scope>
+      </dependency>
+
+      <!-- Mockito Dependencies -->
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>5.2.0</version> <!-- Use the latest version of mockito-core -->
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-junit-jupiter</artifactId>
+        <version>5.2.0</version> <!-- Use the latest version of mockito-junit-jupiter -->
+        <scope>test</scope>
+      </dependency>
+
+      <!-- Mockito Inline for mocking final classes -->
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-inline</artifactId>
+        <version>5.2.0</version> <!-- Same version as mockito-core -->
+        <scope>test</scope>
+      </dependency>
+
+      <!-- Apache Commons Lang (optional for utility methods) -->
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>3.12.0</version>
+      </dependency>
+
+      <!-- JUnit Jupiter API (if not already included above) -->
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>5.8.2</version>
+        <scope>test</scope>
+      </dependency>
+
+    </dependencies>
+
+    <build>
+      <plugins>
+        <!-- Maven Surefire Plugin for Running Tests -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.0.0-M5</version>
+          <configuration>
+            <dependenciesToScan>
+              <dependency>org.junit.jupiter</dependency>
+            </dependenciesToScan>
+          </configuration>
+        </plugin>
+
+        <!-- SpotBugs Maven Plugin -->
+        <plugin>
+          <groupId>com.github.spotbugs</groupId>
+          <artifactId>spotbugs-maven-plugin</artifactId>
+          <version>4.8.6.6</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>spotbugs</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <outputDirectory>target/spotbugs-report</outputDirectory>
+            <xmlOutput>true</xmlOutput>
+            <htmlOutput>true</htmlOutput>
+          </configuration>
+        </plugin>
+
+        <!-- Maven Compiler Plugin -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <source>10</source>
+            <target>10</target>
+          </configuration>
+        </plugin>
+
+
+        <!-- JaCoCo plugin for code coverage -->
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>0.8.7</version> <!-- use the latest version -->
+          <executions>
+            <execution>
+              <goals>
+                <goal>prepare-agent</goal> <!-- prepare JaCoCo agent before tests -->
+              </goals>
+            </execution>
+            <execution>
+              <id>report</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>report</goal> <!-- Generate report after tests -->
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+      </plugins>
+
+      <!-- Add mock-maker-inline configuration inside the build section -->
+      <resources>
+        <resource>
+          <directory>src/test/resources</directory>
+          <includes>
+            <include>mockito-extensions/org.mockito.plugins.MockMaker</include>
+          </includes>
+        </resource>
+      </resources>
+
+
+
+    </build>
+    <reporting>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>3.6.0</version>
+          <reportSets>
+            <reportSet>
+              <reports>
+                <report>checkstyle</report>
+              </reports>
+            </reportSet>
+          </reportSets>
+        </plugin>
+      </plugins>
+    </reporting>
+  </project>

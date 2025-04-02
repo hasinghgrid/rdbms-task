@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  app:
+    image: openjdk:17
+    container_name: cache-system-app
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    volumes:
+      - ./target/cache-system.jar:/app/cache-system.jar
+    command: ["java", "-jar", "/app/cache-system.jar"]
+
+  db:
+    image: mysql:8.0
+    container_name: cache-system-db
+    env_file:
+      - .env
+    ports:
+      - "3307:3308"
+    volumes:
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
