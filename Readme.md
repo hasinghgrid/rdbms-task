@@ -46,24 +46,32 @@ java -jar target/cache-system.jar
 ## Static Code Analysis Reports
 
 ### 1. SpotBugs Report
-Detects potential **bugs and performance issues** in the codebase.
-![SpotBugs Report](images/spotbugs_report.png)
+Detects potential **bugs and performance issues** in the codebase. \
+<img width="1512" alt="Screenshot 2025-04-02 at 12 37 17 PM" src="https://github.com/user-attachments/assets/9e3110d0-7802-4de2-bb37-d2598c978a07" />
+
+
 
 ### 2. PMD Report
 Analyzes **code style, best practices, and potential optimizations**.
-![PMD Report](images/pmd_report.png)
+\
+<img width="1512" alt="Screenshot 2025-04-02 at 12 37 17 PM" src="https://github.com/user-attachments/assets/c956a98d-4d04-40b1-ad81-89fec4844424" />
+
+
 
 ### 3. Checkstyle Report
-Ensures **coding standard compliance** based on Java style guidelines.
-![Checkstyle Report](images/checkstyle_report.png)
+Ensures **coding standard compliance** based on Java style guidelines. \
+<img width="1495" alt="Screenshot 2025-04-02 at 12 41 07 PM" src="https://github.com/user-attachments/assets/d21c2da6-e12c-44ce-8a66-262dd72fa301" />
+
+
 
 ### 4. JaCoCo Report
-Measures **code coverage** to track test effectiveness.
-![JaCoCo Report](images/jacoco_report.png)
+Measures **code coverage** to track test effectiveness. \
+<img width="1504" alt="Screenshot 2025-04-02 at 12 37 07 PM" src="https://github.com/user-attachments/assets/5bc1d4e2-e983-4294-adfa-efd530c3552d" />
 
-## Contributing
-Feel free to submit issues or pull requests to improve the cache system!
 
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## Code Coverage
+<img width="1404" alt="Screenshot 2025-04-02 at 10 29 34 AM" src="https://github.com/user-attachments/assets/c9463b91-8cbb-440a-9ebf-a21ad27fb574" />
+
+
+
 
