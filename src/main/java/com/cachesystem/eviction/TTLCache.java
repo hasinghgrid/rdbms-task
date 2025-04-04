@@ -3,8 +3,8 @@ package com.cachesystem.eviction;
 import java.util.*;
 
 public class TTLCache<K, V> implements EvictionPolicy<K> {
-    private final Map<K, V> storage = new HashMap<>(); // Store key-value pairs
-    private final Map<K, Long> timestampMap = new HashMap<>(); // Store timestamps for TTL
+    private final Map<K, V> storage = new HashMap<>();
+    private final Map<K, Long> timestampMap = new HashMap<>();
     private final long ttl;
 
     public TTLCache(long ttl) {
@@ -13,7 +13,7 @@ public class TTLCache<K, V> implements EvictionPolicy<K> {
 
     @Override
     public void onAccess(K key) {
-        timestampMap.put(key, System.currentTimeMillis()); // Update timestamp on access
+        timestampMap.put(key, System.currentTimeMillis());
     }
 
     @Override
@@ -22,17 +22,17 @@ public class TTLCache<K, V> implements EvictionPolicy<K> {
 
         // Find the oldest expired entry
         Optional<Map.Entry<K, Long>> expiredEntry = timestampMap.entrySet().stream()
-                .filter(entry -> currentTime - entry.getValue() > ttl) // Find expired items
-                .min(Comparator.comparingLong(Map.Entry::getValue)); // Get the oldest expired one
+                .filter(entry -> currentTime - entry.getValue() > ttl)
+                .min(Comparator.comparingLong(Map.Entry::getValue));
 
         if (expiredEntry.isPresent()) {
             K keyToEvict = expiredEntry.get().getKey();
-            timestampMap.remove(keyToEvict); // Remove from timestamp tracking
-            storage.remove(keyToEvict); // Remove from actual cache
+            timestampMap.remove(keyToEvict);
+            storage.remove(keyToEvict);
             return keyToEvict;
         }
 
-        return null; // No expired items to evict
+        return null;
     }
 
     // Method to check if an item is expired

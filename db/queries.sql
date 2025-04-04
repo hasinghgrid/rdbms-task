@@ -1,47 +1,76 @@
--- Insert example eviction policies
-INSERT INTO EvictionPolicy (name, description) VALUES ('LRU', 'Least Recently Used eviction policy');
-INSERT INTO EvictionPolicy (name, description) VALUES ('LFU', 'Least Frequently Used eviction policy');
-INSERT INTO EvictionPolicy (name, description) VALUES ('TTL', 'Time-to-live based eviction policy');
+-- ================================================
+-- QUERY: Get all cache entries with their policies
+-- ================================================
+SELECT
+    c.`key`,
+    c.value,
+    ep.name AS eviction_policy
+FROM Cache c
+JOIN EvictionPolicy ep ON c.eviction_policy_id = ep.id;
 
--- Insert an LRU policy linked to the LRU eviction policy
-INSERT INTO LruPolicy (eviction_policy_id) VALUES (1);
+-- ================================================
+-- QUERY: Count of cache entries per eviction policy
+-- ================================================
+SELECT
+    ep.name AS eviction_policy,
+    COUNT(c.id) AS cache_count
+FROM EvictionPolicy ep
+LEFT JOIN Cache c ON ep.id = c.eviction_policy_id
+GROUP BY ep.name;
 
--- Insert a cache with an eviction policy
-INSERT INTO Cache (`key`, value, eviction_policy_id) VALUES ('user:1001', 'John Doe', 1);
+-- ================================================
+-- QUERY: Cache entries with exceptions
+-- ================================================
+SELECT
+    c.`key`,
+    e.type,
+    e.message
+FROM Cache c
+JOIN Exception e ON c.id = e.cache_id;
 
--- Insert a Cache Manager
-INSERT INTO CacheManager (name) VALUES ('Main Cache Manager');
+-- ================================================
+-- QUERY: List cache managers and number of caches they manage
+-- ================================================
+SELECT
+    cm.name AS cache_manager,
+    COUNT(cc.cache_id) AS total_managed_caches
+FROM CacheManager cm
+LEFT JOIN CacheManager_Cache cc ON cm.id = cc.cache_manager_id
+GROUP BY cm.name;
 
--- Link a cache to the Cache Manager
-INSERT INTO CacheManager_Cache (cache_manager_id, cache_id) VALUES (1, 1);
+-- ================================================
+-- QUERY: Show LRU, LFU, TTL policies and their base eviction policy name
+-- ================================================
+SELECT
+    ep.name AS base_policy,
+    'LRU' AS policy_type
+FROM LruPolicy l
+JOIN EvictionPolicy ep ON l.eviction_policy_id = ep.id
 
--- Insert an exception related to a cache
-INSERT INTO Exception (type, message, cache_id) VALUES ('CacheFullException', 'Cache has exceeded its size limit', 1);
+UNION ALL
 
--- Fetch all caches with their eviction policies
-SELECT Cache.`key`, Cache.value, EvictionPolicy.name AS eviction_policy
-FROM Cache
-JOIN EvictionPolicy ON Cache.eviction_policy_id = EvictionPolicy.id;
+SELECT
+    ep.name,
+    'LFU'
+FROM LfuPolicy lf
+JOIN EvictionPolicy ep ON lf.eviction_policy_id = ep.id
 
--- Fetch all caches managed by a specific Cache Manager
-SELECT Cache.`key`, Cache.value
-FROM Cache
-JOIN CacheManager_Cache ON Cache.id = CacheManager_Cache.cache_id
-WHERE CacheManager_Cache.cache_manager_id = 1;
+UNION ALL
 
--- Get all exceptions related to a cache
-SELECT Exception.type, Exception.message
-FROM Exception
-WHERE Exception.cache_id = 1;
+SELECT
+    ep.name,
+    'TTL'
+FROM TtlPolicy t
+JOIN EvictionPolicy ep ON t.eviction_policy_id = ep.id;
 
--- Fetch caches by eviction policy type (e.g., LRU)
-SELECT Cache.`key`, Cache.value
-FROM Cache
-JOIN EvictionPolicy ON Cache.eviction_policy_id = EvictionPolicy.id
-WHERE EvictionPolicy.name = 'LRU';
-
--- Count the number of caches under a Cache Manager
-SELECT CacheManager.name, COUNT(CacheManager_Cache.cache_id) AS cache_count
-FROM CacheManager
-JOIN CacheManager_Cache ON CacheManager.id = CacheManager_Cache.cache_manager_id
-GROUP BY CacheManager.id;
+-- ================================================
+-- QUERY: Top 5 cache entries by exception frequency
+-- ================================================
+SELECT
+    c.`key`,
+    COUNT(e.id) AS exception_count
+FROM Cache c
+JOIN Exception e ON c.id = e.cache_id
+GROUP BY c.id
+ORDER BY exception_count DESC
+LIMIT 5;

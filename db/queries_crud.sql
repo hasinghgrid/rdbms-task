@@ -1,57 +1,68 @@
--- Creating the main table for cache entries
-CREATE TABLE cache_entries (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    key_name VARCHAR(255) UNIQUE NOT NULL,
-    value TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP NULL,
-    eviction_policy ENUM('LRU', 'LFU', 'TTL') NOT NULL
-);
+-- ================================
+-- FULL CRUD FOR CACHE ENTITY
+-- ================================
 
--- CRUD Queries
--- 1. Insert a new cache entry
-INSERT INTO cache_entries (key_name, value, expires_at, eviction_policy)
-VALUES ('user_session', 'session_data', DATE_ADD(NOW(), INTERVAL 1 HOUR), 'LRU');
+-- CREATE
+INSERT INTO Cache (`key`, value, eviction_policy_id) VALUES ('cache:new:123', 'New Data', 1);
 
--- 2. Read a cache entry by key
-SELECT * FROM cache_entries WHERE key_name = 'user_session';
+-- READ
+SELECT * FROM Cache WHERE `key` = 'cache:new:123';
 
--- 3. Update a cache entry
-UPDATE cache_entries
-SET value = 'updated_data', expires_at = DATE_ADD(NOW(), INTERVAL 2 HOUR)
-WHERE key_name = 'user_session';
+-- UPDATE
+UPDATE Cache SET value = 'Updated Data' WHERE `key` = 'cache:new:123';
 
--- 4. Delete a cache entry
-DELETE FROM cache_entries WHERE key_name = 'user_session';
+-- DELETE
+DELETE FROM Cache WHERE `key` = 'cache:new:123';
+-- ================================
+-- SEARCH QUERY WITH FILTERS, PAGINATION, SORTING
+-- ================================
 
--- Search Query with dynamic filters, pagination, and sorting
-SELECT * FROM cache_entries
-WHERE eviction_policy = 'LRU'
-ORDER BY created_at DESC
-LIMIT 10 OFFSET 0; -- Pagination with 10 results per page
+-- Search cache entries by eviction policy (e.g., 'LRU')
+SELECT c.id, c.`key`, c.value, ep.name AS eviction_policy
+FROM Cache c
+JOIN EvictionPolicy ep ON c.eviction_policy_id = ep.id
+WHERE ep.name = 'LRU'
+ORDER BY c.id DESC
+LIMIT 5 OFFSET 0;
 
--- Search Query with Joined Data
--- Assuming we have a 'cache_metadata' table for additional details
-CREATE TABLE cache_metadata (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    cache_entry_id INT,
-    metadata JSON,
-    FOREIGN KEY (cache_entry_id) REFERENCES cache_entries(id) ON DELETE CASCADE
-);
+-- ================================
+-- JOINED DATA QUERY (REAL USE CASE)
+-- ================================
 
-SELECT ce.*, cm.metadata
-FROM cache_entries ce
-LEFT JOIN cache_metadata cm ON ce.id = cm.cache_entry_id
-WHERE ce.eviction_policy = 'LFU';
+-- Fetch cache details along with eviction policy name and associated CacheManager (if any)
+SELECT
+  c.`key`,
+  c.value,
+  ep.name AS eviction_policy,
+  cm.name AS cache_manager_name
+FROM Cache c
+JOIN EvictionPolicy ep ON c.eviction_policy_id = ep.id
+LEFT JOIN CacheManager_Cache cmc ON c.id = cmc.cache_id
+LEFT JOIN CacheManager cm ON cm.id = cmc.cache_manager_id;
 
--- Statistic Query: Total cache entries per eviction policy
-SELECT eviction_policy, COUNT(*) AS total_entries
-FROM cache_entries
-GROUP BY eviction_policy;
 
--- Top-Something Query: Most frequently stored cache keys
-SELECT key_name, COUNT(*) AS usage_count
-FROM cache_entries
-GROUP BY key_name
-ORDER BY usage_count DESC
-LIMIT 5;
+-- ================================
+-- STATISTICS QUERY
+-- ================================
+
+-- Count of cache entries grouped by eviction policy
+SELECT
+  ep.name AS eviction_policy,
+  COUNT(*) AS total_cache_entries
+FROM Cache c
+JOIN EvictionPolicy ep ON c.eviction_policy_id = ep.id
+GROUP BY ep.name;
+
+-- ================================
+-- TOP-N QUERY
+-- ================================
+
+-- Top 3 eviction policies with most cache entries
+SELECT
+  ep.name AS eviction_policy,
+  COUNT(*) AS cache_count
+FROM Cache c
+JOIN EvictionPolicy ep ON c.eviction_policy_id = ep.id
+GROUP BY ep.name
+ORDER BY cache_count DESC
+LIMIT 3;
