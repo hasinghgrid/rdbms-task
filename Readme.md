@@ -111,6 +111,8 @@ While integrating index creation and schema definitions, certain issues were enc
 - Updated DDL to use **H2-compatible syntax** in tests.
 - Used conditional logic in test scripts to accommodate database-specific syntax differences.
 
----
 
-## ✅ Code Coverage
+----
+
+## ✅ Code Coverage With RDBMS Task
+<img width="1511" alt="Screenshot 2025-04-15 at 2 53 14 PM" src="https://github.com/user-attachments/assets/9c34ecd7-07e2-40c9-bdb1-4462f30b31ad" />
