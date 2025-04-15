@@ -4,6 +4,8 @@ import com.cachesystem.cache.Cache;
 import com.cachesystem.cache.CacheFactory;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLOutput;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -20,6 +22,9 @@ public class LFUCacheTest {
 
         // "key2" should be evicted as it is the least frequently used
         assertNull(cache.get("key2"));
+        System.out.println(cache.get("key1"));
+        System.out.println(cache.get("key3"));
+
         assertEquals("value1", cache.get("key1"));
         assertEquals("value3", cache.get("key3"));
     }
