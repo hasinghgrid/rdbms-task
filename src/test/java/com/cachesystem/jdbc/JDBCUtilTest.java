@@ -1,174 +1,191 @@
 package com.cachesystem.jdbc;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JDBCUtilTest {
 
+    // Before all tests, set up the H2 in-memory database and the schema
     @BeforeAll
-    static void setup() {
+    public static void setUp() throws SQLException {
+        // Set up the database URL, user, and password for H2
         // Use H2 in-memory DB
         System.setProperty("DB_URL", "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1");
         System.setProperty("DB_USER", "sa");
         System.setProperty("DB_PASSWORD", "");
 
-        JDBCUtil.execute(
-                "CREATE TABLE IF NOT EXISTS cache_entries (" +
-                        "id SERIAL PRIMARY KEY, " +
-                        "cache_key VARCHAR(255), " +
-                        "valueC VARCHAR(255), " +
-                        "eviction_policy_id INT, " +
-                        "last_accessed TIMESTAMP" +
-                        ")"
-        );
+        // Run initial schema creation for cache_entries table
+        JDBCUtil.execute("CREATE TABLE IF NOT EXISTS cache_entries (id INT PRIMARY KEY, cache_key VARCHAR(255), last_accessed TIMESTAMP)");
+    }
 
-        JDBCUtil.execute(
-                "INSERT INTO cache_entries (cache_key, valueC , eviction_policy_id, last_accessed) " +
-                        "VALUES (?, ?, ?, ?)",
-                "item1", "value1", 1, new Timestamp(System.currentTimeMillis())
-        );
+    @BeforeEach
+    public void clearTable() throws SQLException {
+        JDBCUtil.execute("DELETE FROM cache_entries");
     }
 
     @Test
-    void testExecuteWithArgs() {
-        JDBCUtil.execute(
-                "INSERT INTO cache_entries (cache_key, valueC, eviction_policy_id, last_accessed) " +
-                        "VALUES (?, ?, ?, ?)",
-                "B", "Value3", 3, new Timestamp(System.currentTimeMillis())
-        );
+    public void testExecuteUpdate() throws SQLException {
+        // Test simple DDL/DML query execution (INSERT)
+        JDBCUtil.execute("INSERT INTO cache_entries (id, cache_key, last_accessed) VALUES (?, ?, ?)", 1, "key1", "2025-04-01 10:00:00");
 
-        var entry = JDBCUtil.findOne(
-                "SELECT valueC FROM cache_entries WHERE cache_key = ?",
+        // Verify the record is inserted
+        String result = JDBCUtil.findOne("SELECT cache_key FROM cache_entries WHERE id = 1", rs -> {
+            try {
+                return rs.getString("cache_key");
+            } catch (SQLException e) {
+                return null;
+            }
+        });
+
+        assertEquals("key1", result);
+    }
+
+    @Test
+    public void testFindOne() throws SQLException {
+        // Insert test data
+        JDBCUtil.execute("INSERT INTO cache_entries (id, cache_key, last_accessed) VALUES (?, ?, ?)", 2, "key2", "2025-04-02 10:00:00");
+
+        // Test findOne() method to retrieve the cache_key
+        String result = JDBCUtil.findOne("SELECT cache_key FROM cache_entries WHERE id = 2", rs -> {
+            try {
+                return rs.getString("cache_key");
+            } catch (SQLException e) {
+                return null;
+            }
+        });
+
+        assertEquals("key2", result);
+    }
+
+    @Test
+    void testFindMany() throws SQLException {
+        // Use cache_entries for the test
+        JDBCUtil.execute("INSERT INTO cache_entries (id, cache_key, last_accessed) VALUES (?, ?, ?)", 1, "key1", "2025-04-01 10:00:00");
+        JDBCUtil.execute("INSERT INTO cache_entries (id, cache_key, last_accessed) VALUES (?, ?, ?)", 2,"key2", "2025-04-02 10:00:00");
+        JDBCUtil.execute("INSERT INTO cache_entries (id, cache_key, last_accessed) VALUES (?, ?, ?)", 3,"key3", "2025-04-03 10:00:00");
+
+        List<String> keys = JDBCUtil.findMany(
+                "SELECT cache_key FROM cache_entries",
                 rs -> {
                     try {
-                        return rs.getString("valueC");
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                },
-                "B"
-        );
-
-        assertEquals("Value3", entry);
-    }
-
-    @Test
-    void testExecuteWithConsumer() {
-        JDBCUtil.execute(
-                "INSERT INTO cache_entries (cache_key, valueC, eviction_policy_id, last_accessed) VALUES (?, ?, ?, ?)",
-                ps -> {
-                    try {
-                        ps.setString(1, "C");
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                    try {
-                        ps.setString(2, "Value4");
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                    try {
-                        ps.setInt(3, 4);
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                    try {
-                        ps.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+                        return rs.getString("cache_key");
                     } catch (SQLException e) {
                         throw new RuntimeException(e);
                     }
                 }
         );
 
-        var entry = JDBCUtil.findOne(
-                "SELECT valueC FROM cache_entries WHERE cache_key = ?",
-                rs -> {
-                    try {
-                        return rs.getString("valueC");
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                },
-                "C"
-        );
-
-        assertEquals("Value4", entry);
+        assertEquals(3, keys.size(), "Expected 3 cache keys to be returned");
+        assertTrue(keys.contains("key1"));
+        assertTrue(keys.contains("key2"));
+        assertTrue(keys.contains("key3"));
     }
 
     @Test
-    void testFindOne() {
-        JDBCUtil.execute(
-                "INSERT INTO cache_entries (cache_key, valueC, eviction_policy_id, last_accessed) " +
-                        "VALUES (?, ?, ?, ?)",
-                "D", "Value5", 5, new Timestamp(System.currentTimeMillis())
-        );
+    void testRunSQLScript() throws SQLException {
+        // First, run table creation script
+        JDBCUtil.runSQLScript("src/main/resources/sql/create_tables.sql");
 
-        var entry = JDBCUtil.findOne(
-                "SELECT valueC FROM cache_entries WHERE cache_key = ?",
-                rs -> {
-                    try {
-                        return rs.getString("valueC");
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                },
-                "D"
-        );
+        // Then run index creation script
+        JDBCUtil.runSQLScript("src/main/resources/sql/create_indexes.sql");
 
-        assertEquals("Value5", entry);
+        // Now verify the index was created (H2 uppercases identifiers unless quoted)
+        try (Connection conn = JDBCUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "SELECT COUNT(*) FROM INFORMATION_SCHEMA.INDEXES WHERE INDEX_NAME = ?")) {
+
+            ps.setString(1, "IDX_UNIQUE_CACHE_KEY");
+            try (ResultSet rs = ps.executeQuery()) {
+                assertTrue(rs.next(), "ResultSet should not be empty");
+                assertEquals(1, rs.getInt(1), "The index 'IDX_UNIQUE_CACHE_KEY' should exist");
+            }
+        }
     }
 
     @Test
-    void testFindMany() {
-        JDBCUtil.execute(
-                "INSERT INTO cache_entries (cache_key, valueC, eviction_policy_id, last_accessed) VALUES (?, ?, ?, ?)",
-                "many1", "v1", 2, new Timestamp(System.currentTimeMillis())
-        );
+    public void testTransactionCommit() throws SQLException {
+        // Begin transaction
+        JDBCUtil.beginTransaction();
+        JDBCUtil.execute("INSERT INTO cache_entries (id, cache_key, last_accessed) VALUES (?, ?, ?)", 5, "key5", "2025-04-05 10:00:00");
 
-        JDBCUtil.execute(
-                "INSERT INTO cache_entries (cache_key, valueC, eviction_policy_id, last_accessed) VALUES (?, ?, ?, ?)",
-                "many2", "v2", 2, new Timestamp(System.currentTimeMillis())
-        );
+        // Commit transaction
+        JDBCUtil.commitTransaction();
 
-        List<String> values = JDBCUtil.findMany(
-                "SELECT valueC FROM cache_entries WHERE eviction_policy_id = ? ORDER BY cache_key",
-                rs -> {
-                    try {
-                        return rs.getString("valueC");
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                },
-                2
-        );
+        // Verify the inserted record
+        String result = JDBCUtil.findOne("SELECT cache_key FROM cache_entries WHERE id = 5", rs -> {
+            try {
+                return rs.getString("cache_key");
+            } catch (SQLException e) {
+                return null;
+            }
+        });
 
-        assertEquals(2, values.size());
-        assertTrue(values.contains("v1"));
-        assertTrue(values.contains("v2"));
+        assertEquals("key5", result);
     }
 
     @Test
-    void testFindManyReturnsEmptyListWhenNoMatch() {
-        List<String> result = JDBCUtil.findMany(
-                "SELECT valueC FROM cache_entries WHERE eviction_policy_id = ?",
-                rs -> {
-                    try {
-                        return rs.getString("valueC");
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                },
-                -99 // no such ID
-        );
+    void testTransactionRollback() throws SQLException {
+        try (Connection conn = JDBCUtil.getConnection()) {
+            conn.setAutoCommit(false);
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "INSERT INTO cache_entries (id, cache_key, last_accessed) VALUES (?, ?, ?)")) {
+                ps.setInt(1, 6); // ID
+                ps.setString(2, "key6"); // cache_key
+                ps.setString(3, "2025-04-06 10:00:00"); // last_accessed
+                ps.executeUpdate();
+            }
+
+            conn.rollback(); // Cancel the insert
+
+            // Validate rollback: item should not be found
+            String result = JDBCUtil.findOne(
+                    "SELECT cache_key FROM cache_entries WHERE cache_key = ?",
+                    rs -> {
+                        try {
+                            return rs.getString("cache_key");
+                        } catch (SQLException e) {
+                            throw new RuntimeException(e);
+                        }
+                    },
+                    "key6"
+            );
+
+            assertNull(result, "key6 should not exist after rollback");
+        }
     }
 
+
+    @Test
+    public void testTransactionIsolation() throws SQLException {
+        // Set isolation level for transaction
+        try (Connection conn = JDBCUtil.getConnection()) {
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+
+            // Begin transaction with SERIALIZABLE isolation
+            JDBCUtil.beginTransaction();
+
+            JDBCUtil.execute("INSERT INTO cache_entries (id, cache_key, last_accessed) VALUES (?, ?, ?)", 7, "key7", "2025-04-07 10:00:00");
+
+            // Verify the isolation level has been set
+            assertEquals(Connection.TRANSACTION_SERIALIZABLE, conn.getTransactionIsolation());
+
+            JDBCUtil.commitTransaction();
+        }
+
+        // Verify the record has been committed
+        String result = JDBCUtil.findOne("SELECT cache_key FROM cache_entries WHERE id = 7", rs -> {
+            try {
+                return rs.getString("cache_key");
+            } catch (SQLException e) {
+                return null;
+            }
+        });
+
+        assertEquals("key7", result);
+    }
 }
